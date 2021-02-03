@@ -20,7 +20,19 @@ namespace Business.Concrete
         public List<Product> GetAll()
         {
             //iş kodları
+            //Yetkisi var mı?
             return _productDal.GetAll();
+        }
+
+        public List<Product> GetAllByCategoryId(int id)
+        {
+            //Her bir CategoryId,benim gönderdiğim Id ye eşit ise onu gönder
+            return _productDal.GetAll(p => p.CategoryId == id);
+        }
+
+        public List<Product> GetByUnitPrice(decimal min, decimal max)
+        {
+            return _productDal.GetAll(p => p.UnitPrice >= min && p.UnitPrice <= max);
         }
     }
 }
