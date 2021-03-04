@@ -14,8 +14,10 @@ namespace Core.Utilities.Security.JWT
 {
     public class JwtHelper : ITokenHelper
     {
+        //IConfiguration WEBAPI appsetting okumaya yaramaktadır.
         public IConfiguration Configuration { get; }
         private TokenOptions _tokenOptions;
+        //_accessTokenExpiration ne zaman geçersizleşicek
         private DateTime _accessTokenExpiration;
         public JwtHelper(IConfiguration configuration)
         {
@@ -23,10 +25,13 @@ namespace Core.Utilities.Security.JWT
             _tokenOptions = Configuration.GetSection("TokenOptions").Get<TokenOptions>();
 
         }
+        //Token üret,User ve Claim lere göre
         public AccessToken CreateToken(User user, List<OperationClaim> operationClaims)
         {
+            //bu token nezaman biticek
             _accessTokenExpiration = DateTime.Now.AddMinutes(_tokenOptions.AccessTokenExpiration);
             var securityKey = SecurityKeyHelper.CreateSecurityKey(_tokenOptions.SecurityKey);
+            //hangi anahat ve hangi algoritmayı kullanıcak
             var signingCredentials = SigningCredentialsHelper.CreateSigningCredentials(securityKey);
             var jwt = CreateJwtSecurityToken(_tokenOptions, user, signingCredentials, operationClaims);
             var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
@@ -53,7 +58,7 @@ namespace Core.Utilities.Security.JWT
             );
             return jwt;
         }
-
+        //Kullanıcaya karşılık gelen Claim 
         private IEnumerable<Claim> SetClaims(User user, List<OperationClaim> operationClaims)
         {
             var claims = new List<Claim>();

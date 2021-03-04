@@ -24,7 +24,7 @@ namespace Business.BusinessAspects.Autofac
             _httpContextAccessor = ServiceTool.ServiceProvider.GetService<IHttpContextAccessor>();
 
         }
-
+        //Ekleme methodun önünde çalıştır eklemeye yetkisi var mı ?
         protected override void OnBefore(IInvocation invocation)
         {
             var roleClaims = _httpContextAccessor.HttpContext.User.ClaimRoles();

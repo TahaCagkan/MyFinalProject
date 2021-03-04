@@ -2,6 +2,8 @@
 using Business.BusinessAspects.Autofac;
 using Business.Constants;
 using Business.ValidationRules.FluentValidation;
+using Core.Aspects.Autofac.Caching;
+using Core.Aspects.Autofac.Transaction;
 using Core.Aspects.Autofac.Validation;
 using Core.CrossCuttingConcerns.Validation;
 using Core.Utilities.Business;
@@ -14,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Transactions;
 
 namespace Business.Concrete
 {
@@ -30,6 +33,7 @@ namespace Business.Concrete
         //Ekle
         [SecuredOperation("product.add,admin")]
         [ValidationAspect(typeof(ProductValidator))]
+        [CacheRemoveAspect("IProductService.Get")]
         public IResult Add(Product product)
         {
             //Kategori limiti 10 dan fazla olamaz,Aynı isimle ürün olamaz
@@ -43,7 +47,7 @@ namespace Business.Concrete
             //eklendiği zaman mesaj eklenicek
             return new SuccessResult(Messages.ProductAdded);  
         }
-
+        [CacheAspect]
         public IDataResult<List<Product>> GetAll()
         {
             //iş kodları
@@ -63,6 +67,7 @@ namespace Business.Concrete
             return new SuccessDataResult<List<Product>>(_productDal.GetAll(p => p.CategoryId == id));
         }
 
+        [CacheAspect]
         public IDataResult<Product> GetById(int productId)
         {
             //SuccessDataResult içerisinde <Product> contructer içerisindeki id yi gönderiyoruz
@@ -82,6 +87,7 @@ namespace Business.Concrete
         }
         //Güncelle
         [ValidationAspect(typeof(ProductValidator))]
+        [CacheRemoveAspect("IProductService.Get")]
         public IResult Update(Product product)
         {
 
@@ -90,7 +96,7 @@ namespace Business.Concrete
         //Ürün için Kategori limiti 10 dan fazla olamaz
         private IResult CheckIfProductCountOfCategoryCorrect(int categoryId)
         {
-            var result = _productDal.GetAll(p => p.CategoryId == categoryId).Count();
+            var result = _productDal.GetAll(p => p.CategoryId == categoryId).Count;
             if (result >= 10)
             {
                 return new ErrorResult(Messages.ProductCountOfCategoryError);
@@ -107,7 +113,7 @@ namespace Business.Concrete
             }
             return new SuccessResult();
         }
-        //Kategori Limiti Aşıldığında
+        //Kategori Limiti(15) Aşıldığında,sisteme yeri ürün eklenemez
         private IResult CheckIfCategoryHaveLimitExceded()
         {
             var result = _categoryService.GetAll();
@@ -116,6 +122,19 @@ namespace Business.Concrete
                 return new ErrorResult(Messages.CategoryHaveLimitExceded);
             }
             return new SuccessResult();
+        }
+
+        [TransactionScopeAspect]
+        public IResult AddTransactionalTest(Product product)
+        {
+            Add(product);
+            if (product.UnitPrice<10)
+            {
+                throw new Exception("");
+            }
+            Add(product);
+
+            return null;
         }
     }
 }
